@@ -1,8 +1,20 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, Response
+import io
 import requests
 from typing import Optional
+import random
+
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
+from PIL import Image, ImageDraw, ImageFont
 
 app = FastAPI()
+
+# Set up template rendering
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 API_KEY = 'TU_API_KEY_AQUI”'  # Reemplaza con tu clave de API
 BASE_URL = 'https://api.pokemontcg.io/v2/cards'
@@ -10,6 +22,52 @@ BASE_URL = 'https://api.pokemontcg.io/v2/cards'
 headers = {
     'X-Api-Key': API_KEY
 }
+
+# Simulated markers with dynamic images
+markers = [
+    {"id": 1, "lat": 51.505, "lon": -0.09, "color": "red"},
+    {"id": 2, "lat": 51.51, "lon": -0.1, "color": "blue"},
+]
+
+# Function to generate marker image dynamically
+def generate_marker(color: str):
+    size = (40, 40)  # Image size
+    img = Image.new("RGBA", size, (255, 255, 255, 0))  # Transparent background
+    draw = ImageDraw.Draw(img)
+
+    # Draw a colored circle
+    draw.ellipse((5, 5, 35, 35), fill=color, outline="black")
+
+    # Convert image to bytes
+    img_byte_array = io.BytesIO()
+    img.save(img_byte_array, format="PNG")
+    return img_byte_array.getvalue()
+
+# API to serve marker images dynamically
+@app.get("/marker-image/{color}.png")
+def get_marker_image(color: str):
+    img_data = generate_marker(color)
+    return Response(content=img_data, media_type="image/png")
+
+# API to get marker data
+@app.get("/markers/")
+def get_markers():
+    for marker in markers:
+        marker["icon"] = f"http://127.0.0.1:8000/marker-image/{marker['color']}.png"
+    return markers
+
+# API to update marker positions
+@app.get("/update-markers/")
+def update_markers():
+    for marker in markers:
+        marker["lat"] += random.uniform(-0.001, 0.001)
+        marker["lon"] += random.uniform(-0.001, 0.001)
+    return markers
+
+
+@app.get("/")
+def home(request: Request):
+    return templates.TemplateResponse("map.html", {"request": request})
 
 @app.get("/")
 def read_root():
