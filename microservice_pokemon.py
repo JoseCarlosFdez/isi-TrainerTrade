@@ -4,6 +4,7 @@ import requests
 from typing import Optional
 import random
 import logging
+import time
 
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -17,7 +18,7 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-API_KEY = 'API_KEY'  # Reemplaza con tu clave de API
+API_KEY = 'beda8eab-a3b7-4269-8d30-07b0367273c1'  # Reemplaza con tu clave de API
 BASE_URL = 'https://api.pokemontcg.io/v2/cards'
 
 headers = {
@@ -25,7 +26,7 @@ headers = {
 }
 
 def fetch_players():
-    response = requests.get('http://127.0.0.1:8080/users/', headers=headers)
+    response = requests.get('http://database:8080/users/', headers=headers)
     if response.status_code != 200:
         raise ValueError("Failed to fetch user data")
     return response.json()
@@ -42,7 +43,13 @@ cards = [
     {"id": 2, "api_id": "ex7-1", "price": 6.53},
 ]
 
-players = fetch_players()
+while True:
+    try:
+        players = fetch_players()
+        break
+    except Exception as e:
+        logging.error(f"Failed to fetch players: {e}. Retrying in 1 second...")
+        time.sleep(1)
 
 # Function to generate marker image dynamically
 def generate_marker(color: str):

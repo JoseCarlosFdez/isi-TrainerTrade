@@ -1,0 +1,21 @@
+services:
+
+  database:
+    build: .
+    command: uvicorn database:app --host 0.0.0.0 --port 8080  # Listen on all interfaces
+    networks:
+      - internal_network
+
+  map:
+    build: .
+    command: uvicorn microservice_pokemon:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    networks:
+      - internal_network
+    depends_on:
+      - database  # Ensures database starts before backend
+
+networks:
+  internal_network:
+    driver: bridge
