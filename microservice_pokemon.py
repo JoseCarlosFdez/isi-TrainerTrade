@@ -17,12 +17,18 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-API_KEY = 'beda8eab-a3b7-4269-8d30-07b0367273c1'  # Reemplaza con tu clave de API
+API_KEY = 'API_KEY'  # Reemplaza con tu clave de API
 BASE_URL = 'https://api.pokemontcg.io/v2/cards'
 
 headers = {
     'X-Api-Key': API_KEY
 }
+
+def fetch_players():
+    response = requests.get('http://127.0.0.1:8080/users/', headers=headers)
+    if response.status_code != 200:
+        raise ValueError("Failed to fetch user data")
+    return response.json()
 
 # Simulated markers with dynamic images
 markers = [
@@ -36,9 +42,7 @@ cards = [
     {"id": 2, "api_id": "ex7-1", "price": 6.53},
 ]
 
-players = [
-    {"id": 1, "name": "Player 1", "lat": 51.505, "lon": -0.09, "cards": [0, 1, 2], "url": "https://www.google.com"},
-]
+players = fetch_players()
 
 # Function to generate marker image dynamically
 def generate_marker(color: str):
