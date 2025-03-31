@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from microservice_pokemon import app  # Asegúrate de que 'main' es el nombre del archivo donde está tu microservicio
+from map import app  # Asegúrate de que 'main' es el nombre del archivo donde está tu microservicio
 
 client = TestClient(app)
 

@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from BBDD import Base, User, create_user, update_user, delete_user, get_user
+from database import Base, User, create_user, update_user, delete_user, get_user
 import random
 import string
 

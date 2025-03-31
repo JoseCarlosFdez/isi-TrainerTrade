@@ -1,10 +1,15 @@
 from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import HTMLResponse
 import io
 import requests
 from typing import Optional
 import random
 import logging
 import time
+import jwt
+
+SECRET_KEY = "your_secret_key_here"
+ALGORITHM = "HS256"
 
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -18,12 +23,22 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-API_KEY = 'API'  # Reemplaza con tu clave de API
+API_KEY = 'API_KEY'  # Reemplaza con tu clave de API
 BASE_URL = 'https://api.pokemontcg.io/v2/cards'
 
 headers = {
     'X-Api-Key': API_KEY
 }
+
+# Function to verify the JWT token
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload  # You can extract user data here
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 def fetch_players():
     response = requests.get('http://database:8080/users/', headers=headers)
@@ -114,22 +129,40 @@ def get_marker_image(id: str):
 @app.get("/markers/")
 def get_markers():
     for player in players:
-        player["icon"] = f"http://127.0.0.1:8000/marker-image/{player['id']}.png"
+        player["icon"] = f"http://127.0.0.1:8000/map/marker-image/{player['id']}.png"
     return players
 
 # API to update marker positions
 @app.get("/update-markers/")
 def update_markers():
+
+    try:
+        players = fetch_players()
+    except Exception as e:
+        logging.error(f"Failed to fetch players: {e}.")
+
+
     for player in players:
         player["lat"] += random.uniform(-0.001, 0.001)
         player["lon"] += random.uniform(-0.001, 0.001)
     return players
 
 
-@app.get("/")
-def home(request: Request):
-    return templates.TemplateResponse("map.html", {"request": request})
-
+@app.get("/map")
+async def home(request: Request, token: Optional[str] = Query(None, description="JWT token")):
+    if token:
+        # If a token is provided, verify it
+        try:
+            user_info = verify_token(token)  # If token is valid, you'll get user info
+            username = user_info["sub"]  # Get the username from the token
+            # Render the map page with the username
+            return templates.TemplateResponse("map.html", {"request": request, "username": username})
+        except HTTPException as e:
+            # If token verification fails, return a 401 response
+            return HTMLResponse(f"Error: {e.detail}", status_code=e.status_code)
+    else:
+        # If no token is provided, return an error
+        return HTMLResponse("Error: Token missing", status_code=401)
 
 @app.get("/cards")
 def search_cards(

@@ -7,3 +7,5 @@ jinja2
 pillow
 sqlalchemy
 types-requests
+python-multipart
+pyjwt
