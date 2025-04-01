@@ -20,10 +20,10 @@ app = FastAPI()
 
 # Set up template rendering
 templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/trainer-trade/static", StaticFiles(directory="static"), name="static")
 
 
-API_KEY = 'API_KEY'  # Reemplaza con tu clave de API
+API_KEY = 'beda8eab-a3b7-4269-8d30-07b0367273c1'  # Reemplaza con tu clave de API
 BASE_URL = 'https://api.pokemontcg.io/v2/cards'
 
 headers = {

@@ -1,0 +1,92 @@
+/* Heredar estilos del mapa */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-color: #052442;
+    --text-color: #ffffff;
+}
+
+/* Fondo y texto */
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+}
+
+/* Contenedor principal */
+.container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background: var(--secondary-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+/* Título */
+h1 {
+    text-align: center;
+    font-size: 24px;
+    padding: 20px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+}
+
+/* Estilo de formularios */
+label {
+    display: block;
+    margin: 10px 0 5px;
+    color: var(--text-color);
+    text-align: left;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Botones */
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, transform 0.2s;
+}
+
+button:hover {
+    background-color: darkblue;
+    transform: scale(1.05);
+}
+
+/* Mensaje de error */
+.error {
+    color: red;
+    margin-bottom: 20px;
+}
+
+/* Animación para la entrada del contenedor */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container {
+    animation: fadeIn 0.5s ease-in-out;
+}

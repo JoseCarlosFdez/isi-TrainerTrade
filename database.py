@@ -31,6 +31,9 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class UserExists(BaseModel):
+    username: str
+
 # Esquemas Pydantic para validación de datos
 class UserCreate(BaseModel):
     username: str
@@ -86,6 +89,20 @@ def authenticate_user(user: UserLogin, db: Session = Depends(get_db)):
     """
     db_user = db.query(User).filter(
         User.username == user.username, User.password == user.password
+    ).first()
+
+    if not db_user:
+        return {"val": False}
+    
+    return {"val": True}
+
+@app.post("/exists/", status_code=200)
+def user_exists(user: UserExists, db: Session = Depends(get_db)):
+    """
+    Verifica las credenciales del usuario en la base de datos sin cifrado.
+    """
+    db_user = db.query(User).filter(
+        User.username == user.username
     ).first()
 
     if not db_user:
