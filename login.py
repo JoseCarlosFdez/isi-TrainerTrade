@@ -6,6 +6,7 @@ from starlette.responses import RedirectResponse
 from typing import Optional
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+import requests
 
 from PIL import Image, ImageDraw, ImageFont
 import logging
@@ -35,6 +36,16 @@ fake_users_db = {
     }
 }
 
+def check_user(username: str, password: str):
+    """
+    Envía un POST a la base de datos con las credenciales del usuario y espera la respuesta.
+    """
+    response = requests.post('http://database:8080/credentials/', json={"username": username, "password": password})
+        
+    return response.json()["val"]
+
+    
+
 # Pydantic model to validate the input data (username & password)
 class LoginRequest(BaseModel):
     username: str
@@ -61,7 +72,7 @@ async def login(
     password: str = Form(...)
 ):
     # Dummy authentication logic
-    if username == "admin" and password == "password":
+    if check_user(username, password) is True:
         token = create_token(username)
         
         # Redirect user to the map microservice with the token in the URL

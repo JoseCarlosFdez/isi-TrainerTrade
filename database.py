@@ -4,6 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 from typing import List
+from fastapi.responses import HTMLResponse
 from sqlalchemy.types import JSON, Float  # Import JSON type for better support
 
 # Configuración de la base de datos
@@ -24,6 +25,11 @@ class User(Base):
 
 # Crear la base de datos
 Base.metadata.create_all(bind=engine)
+
+# Esquemas Pydantic para validación de datos
+class UserLogin(BaseModel):
+    username: str
+    password: str
 
 # Esquemas Pydantic para validación de datos
 class UserCreate(BaseModel):
@@ -72,6 +78,21 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+@app.post("/credentials/", status_code=200)
+def authenticate_user(user: UserLogin, db: Session = Depends(get_db)):
+    """
+    Verifica las credenciales del usuario en la base de datos sin cifrado.
+    """
+    db_user = db.query(User).filter(
+        User.username == user.username, User.password == user.password
+    ).first()
+
+    if not db_user:
+        return {"val": False}
+    
+    return {"val": True}
+
 
 @app.get("/users/{username}", response_model=UserResponse)
 def get_user(username: str, db: Session = Depends(get_db)):

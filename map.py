@@ -46,11 +46,6 @@ def fetch_players():
         raise ValueError("Failed to fetch user data")
     return response.json()
 
-# Simulated markers with dynamic images
-markers = [
-    {"id": "dp3-1", "lat": 51.505, "lon": -0.09, "color": "red"},
-    {"id": "dp3-1", "lat": 51.51, "lon": -0.1, "color": "blue"},
-]
 
 cards = [
     {"id": 0, "api_id": "dp3-1", "price": 2.39},
@@ -92,7 +87,7 @@ def generate_card_marker(player_id: int):
     player_cards = player["cards"]
 
     size = (775, 362)  # Image size
-    img = Image.new("RGBA", size, (0, 0, 0, 255))  # Transparent background
+    img = Image.new("RGBA", size, (0, 0, 0, 255))
 
     for i, card_id in enumerate(player_cards):
 
@@ -156,13 +151,14 @@ async def home(request: Request, token: Optional[str] = Query(None, description=
             user_info = verify_token(token)  # If token is valid, you'll get user info
             username = user_info["sub"]  # Get the username from the token
             # Render the map page with the username
+            current_username = username
             return templates.TemplateResponse("map.html", {"request": request, "username": username})
         except HTTPException as e:
             # If token verification fails, return a 401 response
             return HTMLResponse(f"Error: {e.detail}", status_code=e.status_code)
     else:
-        # If no token is provided, return an error
-        return HTMLResponse("Error: Token missing", status_code=401)
+        # If no token is provided, log as guest
+        return templates.TemplateResponse("map.html", {"request": request})
 
 @app.get("/cards")
 def search_cards(

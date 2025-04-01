@@ -197,10 +197,14 @@
             fetch("http://127.0.0.1:8000/map/markers/")
                 .then(response => response.json())
                 .then(data => {
+                    let userMarkerData = null;
+
                     data.forEach(markerData => {
-                        if (!markers[markerData.id]) {
+                        if (markerData.username === "{{ username }}") {
+                            userMarkerData = markerData; // Save the user's marker data for later
+                        } else if (!markers[markerData.id]) {
                             var customIcon = L.icon({
-                                iconUrl: markerData.icon, 
+                                iconUrl: markerData.icon,
                                 iconSize: [386, 181],
                                 iconAnchor: [193, 191]
                             });
@@ -214,6 +218,23 @@
                             markers[markerData.id] = marker;
                         }
                     });
+
+                    // Add the user's marker last
+                    if (userMarkerData && !markers[userMarkerData.id]) {
+                        var userIcon = L.icon({
+                            iconUrl: "https://cdn-icons-png.flaticon.com/512/252/252025.png",
+                            iconSize: [50, 50],
+                            iconAnchor: [25, 50]
+                        });
+
+                        var userMarker = L.marker([userMarkerData.lat, userMarkerData.lon], { icon: userIcon }).addTo(map);
+                        
+                        userMarker.on("click", function() {
+                            window.open(`user/${userMarkerData.id}`, "_blank");
+                        });
+
+                        markers[userMarkerData.id] = userMarker;
+                    }
                     showLoading(false);
                 })
                 .catch(() => showLoading(false));
