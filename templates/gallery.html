@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Gallery</title>
+    <link rel="stylesheet" href="/trainer-trade/static/style_gallery.css"> <!-- Archivo CSS externo -->
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel for Buttons -->
+        <div id="left-panel">
+            <button id="prevPage" disabled>Previous Page</button>
+            <button id="nextPage">Next Page</button>
+        </div>
+
+        <!-- Main Content -->
+        <div id="gallery-container">
+            <!-- Main Gallery -->
+            <div id="gallery"></div>
+            
+            <!-- User Collection -->
+            <div id="user-collection">
+                <h2>Your Cards</h2>
+                <div id="user-cards"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let page = 1;
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get("token");
+        const galleryServiceUrl = "https://api.pokemontcg.io/v2";
+
+        async function fetchCards() {
+            const response = await fetch(`${galleryServiceUrl}/cards?page=${page}`);
+            const data = await response.json();
+            const gallery = document.getElementById("gallery");
+            gallery.innerHTML = "";
+
+            data.data.forEach(card => {
+                const cardElement = document.createElement("div");
+                cardElement.classList.add("card");
+                cardElement.innerHTML = `<img src="${card.images.small}" alt="Pokémon Card">`;
+                cardElement.addEventListener("click", () => addUserCard(card.id));
+                gallery.appendChild(cardElement);
+            });
+
+            document.getElementById("prevPage").disabled = page <= 1;
+        }
+
+        async function fetchUserCards() {
+            const response = await fetch(`http://127.0.0.1:8000/gallery/user-cards/?token=${token}`);
+            const data = await response.json();
+            const userCards = document.getElementById("user-cards");
+            userCards.innerHTML = "";
+
+            for (const card of data) {
+                const cardResponse = await fetch(`${galleryServiceUrl}/cards/${card.api_id}`);
+                const cardData = await cardResponse.json();
+                const cardElement = document.createElement("div");
+                cardElement.classList.add("card");
+                cardElement.innerHTML = `<img src="${cardData.data.images.small}" alt="User Card">`;
+                userCards.appendChild(cardElement);
+            }
+        }
+
+        async function addUserCard(cardId) {
+            await fetch(`http://127.0.0.1:8000/gallery/user-cards/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ token, cardId })
+            });
+            fetchUserCards();
+        }
+
+        document.getElementById("nextPage").addEventListener("click", () => {
+            page++;
+            fetchCards();
+        });
+
+        document.getElementById("prevPage").addEventListener("click", () => {
+            if (page > 1) {
+                page--;
+                fetchCards();
+            }
+        });
+
+        fetchCards();
+        if (token) fetchUserCards();
+    </script>
+</body>
+</html>

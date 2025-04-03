@@ -26,7 +26,7 @@
             <button onclick="alert('Button 1 clicked!')">Comunidad</button>
             <button onclick="alert('Button 2 clicked!')">Mapa</button>
             <button onclick="alert('Button 2 clicked!')">Mensajería</button>
-            <button onclick="alert('Button 2 clicked!')">Galería</button>
+            <button onclick="window.location.href='http://127.0.0.1:8000/gallery?token={{ token }}'">Galería</button>
             <div id="loading">Loading markers...</div>
         </div>
 
@@ -37,7 +37,7 @@
     </div>
 
     <script>
-        var map = L.map('map').setView([51.505, -0.09], 13);
+        var map = L.map('map').setView([38.988, -3.926], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -96,20 +96,53 @@
                 .catch(() => showLoading(false));
         }
 
+        function addNewMarkers(data) {
+            data.forEach(markerData => {
+            if (!markers[markerData.id]) {
+                let iconOptions, marker;
+
+                if (markerData.username === "{{ username }}") {
+                iconOptions = {
+                    iconUrl: "https://cdn-icons-png.flaticon.com/512/252/252025.png",
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 50]
+                };
+                } else {
+                iconOptions = {
+                    iconUrl: markerData.icon,
+                    iconSize: [386, 181],
+                    iconAnchor: [193, 191]
+                };
+                }
+
+                const customIcon = L.icon(iconOptions);
+
+                marker = L.marker([markerData.lat, markerData.lon], { icon: customIcon }).addTo(map);
+
+                marker.on("click", function () {
+                window.open(`user/${markerData.id}`, "_blank");
+                });
+
+                markers[markerData.id] = marker;
+            }
+            });
+        }
+
         function updateMarkers() {
             fetch("http://127.0.0.1:8000/map/update-markers/")
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(markerData => {
-                        if (markers[markerData.id]) {
-                            markers[markerData.id].setLatLng([markerData.lat, markerData.lon]);  
-                        }
-                    });
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(markerData => {
+                if (markers[markerData.id]) {
+                    markers[markerData.id].setLatLng([markerData.lat, markerData.lon]);
+                }
                 });
+                addNewMarkers(data); // Add new markers if they don't already exist
+            });
         }
 
         loadMarkers(); 
-        setInterval(updateMarkers, 2000);
+        // setInterval(loadMarkers, 2000);
     </script>
 </body>
 </html>

@@ -44,14 +44,25 @@ def fetch_players():
     response = requests.get('http://database:8080/users/', headers=headers)
     if response.status_code != 200:
         raise ValueError("Failed to fetch user data")
+    players = response.json()
+    for player in players:
+        player["icon"] = f"http://127.0.0.1:8000/map/marker-image/{player['id']}.png"
+
+    return players
+
+def fetch_cards():
+    response = requests.get('http://database:8080/cards/', headers=headers)
+    if response.status_code != 200:
+        raise ValueError("Failed to fetch user data")
     return response.json()
 
-
-cards = [
-    {"id": 0, "api_id": "dp3-1", "price": 2.39},
-    {"id": 1, "api_id": "ex12-1", "price": 1.23},
-    {"id": 2, "api_id": "ex7-1", "price": 6.53},
-]
+while True:
+    try:
+        cards = fetch_cards()
+        break
+    except Exception as e:
+        logging.error(f"Failed to fetch cards: {e}. Retrying in 1 second...")
+        time.sleep(1)
 
 while True:
     try:
@@ -76,22 +87,31 @@ def generate_marker(color: str):
     return img_byte_array.getvalue()
 
 def search_player_by_id(id: int):
+    players = fetch_players()
     for player in players:
         if player["id"] == id:
             return player
     return None
 
-def generate_card_marker(player_id: int):
+def generate_card_marker(player_id: int, cards: dict):
 
     player = search_player_by_id(player_id)
-    player_cards = player["cards"]
+    if player is None:
+        player_cards = []
+    else:
+        player_cards = player["cards"]
 
     size = (775, 362)  # Image size
     img = Image.new("RGBA", size, (0, 0, 0, 255))
 
     for i, card_id in enumerate(player_cards):
 
-        card = cards[card_id]
+        card = None
+        for card in cards:
+            if card["id"] == card_id:
+                break
+        if card is None:
+            continue
         api_card_id = card["api_id"]
         image_url = search_card_by_id(api_card_id)['data']['images']['small']
 
@@ -117,12 +137,14 @@ def generate_card_marker(player_id: int):
 # API to serve marker images dynamically
 @app.get("/marker-image/{id}.png")
 def get_marker_image(id: str):
-    img_data = generate_card_marker(int(id))
+    cards = fetch_cards()
+    img_data = generate_card_marker(int(id), cards)
     return Response(content=img_data, media_type="image/png")
 
 # API to get marker data
 @app.get("/markers/")
 def get_markers():
+    players= fetch_players()
     for player in players:
         player["icon"] = f"http://127.0.0.1:8000/map/marker-image/{player['id']}.png"
     return players
@@ -133,13 +155,9 @@ def update_markers():
 
     try:
         players = fetch_players()
+        cards = fetch_cards()
     except Exception as e:
-        logging.error(f"Failed to fetch players: {e}.")
-
-
-    for player in players:
-        player["lat"] += random.uniform(-0.001, 0.001)
-        player["lon"] += random.uniform(-0.001, 0.001)
+        raise HTTPException(status_code=500, detail="Failed to update markers")
     return players
 
 
@@ -152,7 +170,7 @@ async def home(request: Request, token: Optional[str] = Query(None, description=
             username = user_info["sub"]  # Get the username from the token
             # Render the map page with the username
             current_username = username
-            return templates.TemplateResponse("map.html", {"request": request, "username": username})
+            return templates.TemplateResponse("map.html", {"request": request, "username": username, "token": token})
         except HTTPException as e:
             # If token verification fails, return a 401 response
             return HTMLResponse(f"Error: {e.detail}", status_code=e.status_code)
